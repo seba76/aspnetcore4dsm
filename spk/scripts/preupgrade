@@ -1,0 +1,14 @@
+#!/bin/sh
+
+. `dirname $0`/common
+
+# check dotnet can work normally
+DOTNET_VERSION="${PACK_PATH}/dotnet --info"
+$($DOTNET_VERSION &>/dev/null)
+
+if [ $? != 0 ]; then
+	echo "DotNet binary is broken"
+	exit 0
+fi
+
+exit 0

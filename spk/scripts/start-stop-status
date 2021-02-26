@@ -1,0 +1,20 @@
+#!/bin/sh
+
+. `dirname $0`/common
+
+case $1 in
+	start)
+		checkEnvironment
+		exit 0
+		;;
+	stop)
+		exit 0
+		;;
+	status)
+		GET_STATUS
+		exit $?
+		;;
+	log)
+		exit 0
+		;;
+esac

@@ -1,0 +1,114 @@
+#!/bin/sh
+
+PKG_PATH="/var/packages/aspnetcore4dsm"
+SYNOPKG_PKGDEST="$PKG_PATH/target"
+PACK_PATH="$SYNOPKG_PKGDEST"
+
+USR_PROFILE="/root/.profile"
+SYS_PROFILE="/etc/profile"
+COMMENT="# Synology ASP.NET Core runtime enviroment"
+
+#Utility
+DOTNET_VERSION_GET()
+{
+	local DOTNET_ROOT=`cat ${SYS_PROFILE} | grep "DOTNET_ROOT="`
+	if [ -z "${DOTNET_ROOT}" ]; then
+		return 0
+	fi
+	local DOTNET_VERSION=`${DOTNET_ROOT}/dotnet --info | grep -e "Version: " | awk -F " " '{print $2}' | awk -F "." '{print $1}'`
+	if [ -z "${DOTNET_VERSION}" ]; then
+		return 0
+	fi
+	return ${DOTNET_VERSION}
+}
+
+DOTNET_ADD()
+{
+	if [ "$1" = ${USR_PROFILE} ]; then
+		echo "PATH=\$PATH:${PACK_PATH} ${COMMENT}" 			>> ${USR_PROFILE}
+		echo "DOTNET_ROOT=${PACK_PATH} ${COMMENT}" 			>> ${USR_PROFILE}
+		#echo "DOTNET_ROOT(x86)=${PACK_PATH} ${COMMENT}" 	>> ${USR_PROFILE}
+		echo "DOTNET_NOLOGO=true ${COMMENT}" 				>> ${USR_PROFILE}
+		echo "DOTNET_CLI_UI_LANGUAGE=en-US ${COMMENT}"		>> ${USR_PROFILE}
+		echo "DOTNET_DISABLE_GUI_ERRORS=true ${COMMENT}" 	>> ${USR_PROFILE}
+		echo "export PATH DOTNET_ROOT DOTNET_NOLOGO DOTNET_CLI_UI_LANGUAGE DOTNET_DISABLE_GUI_ERRORS ${COMMENT}"	>> ${USR_PROFILE}
+	elif [ "$1" = ${SYS_PROFILE} ]; then
+		echo "PATH=\$PATH:${PACK_PATH} ${COMMENT}" 			>> ${SYS_PROFILE}
+		echo "DOTNET_ROOT=${PACK_PATH} ${COMMENT}" 			>> ${SYS_PROFILE}
+		#echo "DOTNET_ROOT(x86)=${PACK_PATH} ${COMMENT}" 	>> ${SYS_PROFILE}
+		echo "DOTNET_NOLOGO=true ${COMMENT}" 				>> ${SYS_PROFILE}
+		echo "DOTNET_CLI_UI_LANGUAGE=en-US ${COMMENT}"		>> ${SYS_PROFILE}
+		echo "DOTNET_DISABLE_GUI_ERRORS=true ${COMMENT}" 	>> ${SYS_PROFILE}
+		echo "export PATH DOTNET_ROOT DOTNET_NOLOGO DOTNET_CLI_UI_LANGUAGE DOTNET_DISABLE_GUI_ERRORS ${COMMENT}" 	>> ${SYS_PROFILE}
+	fi
+}
+
+DOTNET_REMOVE()
+{
+	sed -i "/${COMMENT}/d" "$1"
+}
+
+GET_STATUS()
+{
+	[ -e "${PACK_PATH}/dotnet" ] || return 150
+	return 0
+}
+
+UPDATE_ENV_INSERT()
+{
+	DOTNET_VERSION_GET
+	if [ "$?" -lt 5 ]; then
+		DOTNET_REMOVE ${USR_PROFILE}
+		DOTNET_REMOVE ${SYS_PROFILE}
+		DOTNET_ADD ${USR_PROFILE} 5
+		DOTNET_ADD ${SYS_PROFILE} 5
+	fi
+	return 0
+}
+
+UPDATE_ENV_REMOVE()
+{
+	DOTNET_VERSION_GET
+	if [ "$?" -eq 5 ]; then
+		DOTNET_REMOVE ${USR_PROFILE}
+		DOTNET_REMOVE ${SYS_PROFILE}
+	fi
+	return 0
+}
+
+removeEnvironment()
+{
+	(
+		flock -w 60 9 || exit 1
+		UPDATE_ENV_REMOVE
+	)9>/tmp/dotnet.lock
+
+	if [ $? -eq 1 ]; then
+		echo "UPDATE_ENV_REMOVE fail..."
+	fi
+
+}
+
+checkEnvironment()
+{
+	(
+		flock -w 60 9 || exit 1
+		# /root/.profile has 6 line for dotnet
+		NUM_USR=`grep -c "$COMMENT$" $USR_PROFILE`
+		# /etc/profile has 6 line for dotnet
+		NUM_SYS=`grep -c "$COMMENT$" $SYS_PROFILE`
+
+		# Environment sanity check
+		if [ 6 != $NUM_USR ] || [ 6 != $NUM_SYS ]; then
+			DOTNET_REMOVE ${USR_PROFILE}
+			DOTNET_REMOVE ${SYS_PROFILE}
+		fi
+
+		UPDATE_ENV_INSERT
+
+	)9>/tmp/dotnet.lock
+
+	if [ $? -eq 1 ]; then
+		echo "UPDATE_ENV_INSERT fail..."
+	fi
+}

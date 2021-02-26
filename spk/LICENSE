@@ -1,0 +1,16 @@
+LICENSE 
+===== 
+THIS PACKAGE IS A COMMUNITY PROJECT!
+USE IT AT YOUR OWN RISK, 
+WE WILL NOT TAKE RESPONSABILITY 
+FOR ANY DAMAGE AND/OR DATA LOSS 
+RESULTING FROM INSTALLING THIS PACKAGE! 
+
+CHANGELOG 
+===== 
+Version: 5.0.3
+First version of aspnetcore4dsm
+
+KNOWN ISSUES
+=====
+Following message shown when starting apps: "dotnet: /lib/libstdc++.so.6: no version information available (required by dotnet)"
