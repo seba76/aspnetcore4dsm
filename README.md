@@ -1,3 +1,7 @@
+[![Github All Releases](https://img.shields.io/github/downloads/seba76/aspnetcore4dsm/total.svg)](https://github.com/seba76/aspnetcore4dsm)
+[![Paypal](https://img.shields.io/badge/paypal-donate-yellow.svg)](https://paypal.me/seba76/)
+___
+
 # aspnetcore4dsm
 
 This project was created for repacking of ASP.NET Core Runtime tar.gz archive for Linux x64, which you can download from Microsoft [dot.net](https://dot.net) website, as Synology spk package for easier installation.
@@ -16,5 +20,4 @@ Latest spk file can be found in the [release](https://github.com/seba76/aspnetco
 
 ## Contributing
 
-If you find this project useful you can mark it by leaving a Github *Star* and if you would like to support this Project consider making a donation.<br>
-[![Donate](https://img.shields.io/badge/donate-PayPal-yellow.svg)](https://paypal.me/seba76/)
+If you find this project useful you can mark it by leaving a Github *Star* or if you have any issues create one.
