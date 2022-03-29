@@ -1,6 +1,9 @@
 #!/bin/sh
 
-PKG_PATH="/var/packages/aspnetcore4dsm"
+# Package
+PACKAGE="aspnetcore4dsm"
+
+PKG_PATH="/var/packages/$PACKAGE"
 SYNOPKG_PKGDEST="$PKG_PATH/target"
 PACK_PATH="$SYNOPKG_PKGDEST"
 
@@ -24,6 +27,8 @@ DOTNET_VERSION_GET()
 
 DOTNET_ADD()
 {
+	# ENV info taken from https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet#environment-variables
+	# default location in Linux in /usr/share/dotnet
 	if [ "$1" = ${USR_PROFILE} ]; then
 		echo "PATH=\$PATH:${PACK_PATH} ${COMMENT}" 			>> ${USR_PROFILE}
 		echo "DOTNET_ROOT=${PACK_PATH} ${COMMENT}" 			>> ${USR_PROFILE}
@@ -31,7 +36,11 @@ DOTNET_ADD()
 		echo "DOTNET_NOLOGO=true ${COMMENT}" 				>> ${USR_PROFILE}
 		echo "DOTNET_CLI_UI_LANGUAGE=en-US ${COMMENT}"		>> ${USR_PROFILE}
 		echo "DOTNET_DISABLE_GUI_ERRORS=true ${COMMENT}" 	>> ${USR_PROFILE}
-		echo "export PATH DOTNET_ROOT DOTNET_NOLOGO DOTNET_CLI_UI_LANGUAGE DOTNET_DISABLE_GUI_ERRORS ${COMMENT}"	>> ${USR_PROFILE}
+		echo "export PATH ${COMMENT}"						>> ${USR_PROFILE}
+		echo "export DOTNET_ROOT ${COMMENT}"				>> ${USR_PROFILE}
+		echo "export DOTNET_NOLOGO ${COMMENT}"				>> ${USR_PROFILE}
+		echo "export DOTNET_CLI_UI_LANGUAGE ${COMMENT}"		>> ${USR_PROFILE}
+		echo "export DOTNET_DISABLE_GUI_ERRORS ${COMMENT}"	>> ${USR_PROFILE}
 	elif [ "$1" = ${SYS_PROFILE} ]; then
 		echo "PATH=\$PATH:${PACK_PATH} ${COMMENT}" 			>> ${SYS_PROFILE}
 		echo "DOTNET_ROOT=${PACK_PATH} ${COMMENT}" 			>> ${SYS_PROFILE}
@@ -39,7 +48,11 @@ DOTNET_ADD()
 		echo "DOTNET_NOLOGO=true ${COMMENT}" 				>> ${SYS_PROFILE}
 		echo "DOTNET_CLI_UI_LANGUAGE=en-US ${COMMENT}"		>> ${SYS_PROFILE}
 		echo "DOTNET_DISABLE_GUI_ERRORS=true ${COMMENT}" 	>> ${SYS_PROFILE}
-		echo "export PATH DOTNET_ROOT DOTNET_NOLOGO DOTNET_CLI_UI_LANGUAGE DOTNET_DISABLE_GUI_ERRORS ${COMMENT}" 	>> ${SYS_PROFILE}
+		echo "export DOTNET_ROOT ${COMMENT}" 				>> ${SYS_PROFILE}
+		echo "export PATH ${COMMENT}" 						>> ${SYS_PROFILE}
+		echo "export DOTNET_NOLOGO ${COMMENT}" 				>> ${SYS_PROFILE}
+		echo "export DOTNET_CLI_UI_LANGUAGE ${COMMENT}" 	>> ${SYS_PROFILE}
+		echo "export DOTNET_DISABLE_GUI_ERRORS ${COMMENT}" 	>> ${SYS_PROFILE}
 	fi
 }
 
@@ -60,8 +73,8 @@ UPDATE_ENV_INSERT()
 	if [ "$?" -lt 5 ]; then
 		DOTNET_REMOVE ${USR_PROFILE}
 		DOTNET_REMOVE ${SYS_PROFILE}
-		DOTNET_ADD ${USR_PROFILE} 5
-		DOTNET_ADD ${SYS_PROFILE} 5
+		DOTNET_ADD ${USR_PROFILE} 
+		DOTNET_ADD ${SYS_PROFILE} 
 	fi
 	return 0
 }
@@ -99,7 +112,7 @@ checkEnvironment()
 		NUM_SYS=`grep -c "$COMMENT$" $SYS_PROFILE`
 
 		# Environment sanity check
-		if [ 6 != $NUM_USR ] || [ 6 != $NUM_SYS ]; then
+		if [ 10 != $NUM_USR ] || [ 10 != $NUM_SYS ]; then
 			DOTNET_REMOVE ${USR_PROFILE}
 			DOTNET_REMOVE ${SYS_PROFILE}
 		fi
@@ -112,3 +125,51 @@ checkEnvironment()
 		echo "UPDATE_ENV_INSERT fail..."
 	fi
 }
+
+getNames(){
+	names=
+	for d in $SYNOPKG_PKGDEST/shared/Microsoft.NETCore.App/*/ ; do
+		local dirName=$(echo $d| cut -d'/' -f 8)
+		names="${names} $dirName"
+	done
+}
+
+
+preUpgrade()
+{
+	[ -d ${TMP_DIR}/${PACKAGE} ] && rm -fr ${TMP_DIR}/${PACKAGE}
+	mkdir -p ${TMP_DIR}/${PACKAGE}/host/fxr
+	mkdir -p ${TMP_DIR}/${PACKAGE}/Microsoft.AspNetCore.App
+	mkdir -p ${TMP_DIR}/${PACKAGE}/Microsoft.NETCore.App
+	
+	getNames
+	
+	for dirName in $names ; do
+		dir=$(echo $dirName | sed -r 's/\./_/g')
+		wiz="wiz_aspnetkeep_${dir}"
+		keep=$(eval echo \$${wiz})
+		if [ "$keep" == "true" ]; then
+			# copy $d to temp
+			cp -rf $SYNOPKG_PKGDEST/host/fxr/${dirName} ${TMP_DIR}/${PACKAGE}/host/fxr/
+			cp -rf $SYNOPKG_PKGDEST/shared/Microsoft.AspNetCore.App/${dirName} ${TMP_DIR}/${PACKAGE}/Microsoft.AspNetCore.App/
+			cp -rf $SYNOPKG_PKGDEST/shared/Microsoft.NETCore.App/${dirName} ${TMP_DIR}/${PACKAGE}/Microsoft.NETCore.App/
+		fi
+	done
+
+	exit 0
+}
+
+postUpgrade()
+{
+	if [ -d ${TMP_DIR}/${PACKAGE} ]; then
+		# restore saved 
+		cp -rf ${TMP_DIR}/${PACKAGE}/host/fxr/* $SYNOPKG_PKGDEST/host/fxr/
+		cp -rf ${TMP_DIR}/${PACKAGE}/Microsoft.AspNetCore.App/* $SYNOPKG_PKGDEST/shared/Microsoft.AspNetCore.App/
+		cp -rf ${TMP_DIR}/${PACKAGE}/Microsoft.NETCore.App/* $SYNOPKG_PKGDEST/shared/Microsoft.NETCore.App/
+		
+		# cleanup
+		rm -fr ${TMP_DIR}/${PACKAGE}
+	fi
+	exit 0
+}
+

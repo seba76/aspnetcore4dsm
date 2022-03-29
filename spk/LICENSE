@@ -8,7 +8,14 @@ RESULTING FROM INSTALLING THIS PACKAGE!
 
 CHANGELOG 
 ===== 
+Version: 6.0.3
+Update to NET6
+
+===== 
 Version: 5.0.3
+Update to NET5
+
+Version: 3.1.12
 First version of aspnetcore4dsm
 
 KNOWN ISSUES

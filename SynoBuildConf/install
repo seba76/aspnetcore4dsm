@@ -6,19 +6,21 @@ rm -rf $PKG_DIR
 mkdir -p $PKG_DIR
 
 ### get spk packing functions
-source /pkgscripts/include/pkg_util.sh
+#source /pkgscripts/include/pkg_util.sh
+source /pkgscripts-ng/include/pkg_util.sh
 
 create_inner_tarball() {
 	local inner_tarball_dir=/tmp/_inner_tarball
 
 	### clear destination directory
 	[ -d $inner_tarball_dir ] && rm -rf $inner_tarball_dir
+	mkdir -p $inner_tarball_dir
 
 	### install needed file into PKG_DIR
-	cp -r package $inner_tarball_dir
+	cp -r package/* $inner_tarball_dir
 
 	### create package.txz: $1=source_dir, $2=dest_dir
-	pkg_make_inner_tarball $inner_tarball_dir "${PKG_DIR}"
+	pkg_make_package $inner_tarball_dir "${PKG_DIR}"
 } 
 
 create_spk(){
@@ -33,6 +35,9 @@ create_spk(){
 
 	### Copy licence file
 	cp -av spk/LICENSE $PKG_DIR
+
+	### Copy conf
+	cp -av spk/conf $PKG_DIR
 
 	### Generate INFO file
 	./INFO.sh > INFO
