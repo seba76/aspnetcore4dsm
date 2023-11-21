@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if [ "$EUID" -ne 0 ]; then
+    echo "This script must be run as root"
+    exit 1
+fi
+
+dir=`dirname $0`
+sed -i 's/package/root/' "$dir/../conf/privilege"
+
+synopkg restart aspnetcore4dsm > /dev/null
+
+if [ "$?" -eq 0 ]; then
+    echo "aspnetcore4dsm has been successfully restart"
+    exit 0
+else
+    echo "An error occurred during aspnetcore4dsm restart" 1>&2
+    exit 1
+fi
