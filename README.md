@@ -16,7 +16,11 @@ Latest spk file can be found in the [release](https://github.com/seba76/aspnetco
 - This package will work only on x64 machines.
 
 ## Known issues
-- **"dotnet: /lib/libstdc++.so.6: no version information available (required by dotnet)"** message might be seen when you start dotnet app.
+Since DSM 7 doesn't allow to install packages that require root permission if they are not signed by Synology and for propper operation of this package it is neccesary, I've created script that needs to be executed when installing is finished. 
+```
+sudo /var/packages/aspnetcore4dsm/scripts/run_as_root
+```
+This is neccesary for editing /etc/profile and /root/.profile files since NET on linux has to have **DOTNET_ROOT** enviroment variable set, in addition to that one few more variable are set, also it will add path to /var/packages/aspnetcore4dsm/target folder to the **PATH** enviroment variable.
 
 ## Contributing
 
